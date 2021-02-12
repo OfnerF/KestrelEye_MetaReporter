@@ -1,0 +1,20 @@
+from src.MetaReporter import MetaReporter
+
+model_path_1 = "D:\\Karriere\\KestrelEye\\MetaReporter\\reports\\session11\\S11_LNRN18s_new_nt_bw1"
+result_path_1 = "D:\\Karriere\\KestrelEye\\MetaReporter\\reports\\session11\\S11_LNRN18s_new_nt_bw1"
+
+model_path_2 = "D:\\Karriere\\KestrelEye\\MetaReporter\\reports\\session11\\S11_LNRN18s_new_nt_bw4_AdaBound"
+result_path_2 = "D:\\Karriere\\KestrelEye\\MetaReporter\\reports\\session11\\S11_LNRN18s_new_nt_bw4_AdaBound"
+
+model_path_3 = "D:\\Karriere\\KestrelEye\\MetaReporter\\reports\\session11\\S11_LNRN18s_new_nt_bw4_Adam"
+result_path_3 = "D:\\Karriere\\KestrelEye\\MetaReporter\\reports\\session11\\S11_LNRN18s_new_nt_bw4_Adam"
+
+config_path = "D:\\Karriere\\KestrelEye\\MetaReporter\\src\\config\\config.json"
+
+meta_reporter_1 = MetaReporter(model_path_1, result_path_1, config_path=config_path)
+print(meta_reporter_1)
+meta_reporter_1.generate()
+
+meta_reporter_3 = MetaReporter(model_path_3, result_path_3, config_path=config_path, drop_rows=['avg'])
+print(meta_reporter_3)
+meta_reporter_3.generate()

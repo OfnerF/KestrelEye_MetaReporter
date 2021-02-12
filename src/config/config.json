@@ -1,0 +1,25 @@
+{
+  "pattern": {
+    "run": "^run[0-9]+$",
+    "test_results": "^(train|val|test)_testresults.csv$",
+    "metrics": "^metrics.csv$"
+  },
+  "look_for": [
+    "test_results",
+    "metrics"
+  ],
+  "metrics": [
+    "mean",
+    "min",
+    "max",
+    "std"
+  ],
+  "drop": [
+    "avg",
+    "any",
+    "none"
+  ],
+  "file_prefix": "meta",
+  "nan_representation": "NULL",
+  "class_column_name": "Class"
+}
