@@ -43,7 +43,7 @@ def get_files_per_name(files):
     return paths_of_file
 
 
-def remove_redundant_files(files, run_pattern, root_dir):
+def remove_files_not_in_runs(files, run_pattern, root_dir):
     for file in files:
         if not get_run_of_file(file, run_pattern, root_dir):
             files.remove(file)
@@ -52,3 +52,15 @@ def remove_redundant_files(files, run_pattern, root_dir):
 
 def generate_file_path(path, file_name):
     return os.path.join(path, file_name)
+
+
+def get_model_paths(path):
+    return [f.path for f in os.scandir(path) if f.is_dir()]
+
+
+def remove_children(parent, files):
+    files_ = files.copy()
+    for file in files_:
+        if os.path.normpath(os.path.dirname(file)) == os.path.normpath(parent):
+            files.remove(file)
+    return files

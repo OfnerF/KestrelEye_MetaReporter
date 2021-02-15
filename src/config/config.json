@@ -1,19 +1,25 @@
 {
   "pattern": {
     "run": "^run[0-9]+$",
-    "test_results": "^(train|val|test)_testresults.csv$",
-    "metrics": "^metrics.csv$"
+    "test_results": "^(train|val|test)_testresults\\.csv$",
+    "metrics": "^metrics\\.csv$",
+    "meta": "^meta_.+\\.csv$"
   },
   "look_for": [
     "test_results",
     "metrics"
   ],
-  "metrics": [
-    "mean",
-    "min",
-    "max",
-    "std"
-  ],
+  "metrics": {
+    "model": [
+      "mean",
+      "min",
+      "max",
+      "std"
+    ],
+    "session": [
+      "mean"
+    ]
+  },
   "drop": [
     "avg",
     "any",

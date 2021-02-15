@@ -13,9 +13,23 @@ def generate_dataframes(paths_of_file, index_name, drop_rows):
         file_data.index.set_names(index_name, inplace=True)
 
         file_data.drop(index=drop_rows, inplace=True, errors='ignore')
-
         file_dataframes.append(file_data)
     return file_dataframes
+
+
+def calculate(dataframes, group_by, metrics):
+    calculated = []
+    for df in dataframes:
+        grouped_file_data = df.groupby(group_by, group_keys=False, as_index=True, sort=False)
+        # calculate stats
+        aggregated = grouped_file_data.agg(metrics)
+
+        # set column names
+        aggregated.columns = ['_'.join(col).strip() for col in aggregated.columns]
+
+        calculated.append(aggregated)
+
+    return calculated
 
 
 def write_result(path, dataframes, file_names, nan_representation):
