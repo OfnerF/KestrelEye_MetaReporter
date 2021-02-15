@@ -15,6 +15,10 @@ meta_reporter_1 = MetaReporter(model_path_1, result_path_1, config_path=config_p
 print(meta_reporter_1)
 meta_reporter_1.generate()
 
-meta_reporter_3 = MetaReporter(model_path_3, result_path_3, config_path=config_path, drop_rows=['avg'])
+meta_reporter_2 = MetaReporter(model_path_2, result_path_2, config_path=config_path)
+print(meta_reporter_2)
+meta_reporter_2.generate()
+
+meta_reporter_3 = MetaReporter(model_path_3, result_path_3, config_path=config_path)
 print(meta_reporter_3)
 meta_reporter_3.generate()
