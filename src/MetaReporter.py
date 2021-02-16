@@ -1,9 +1,8 @@
 from .utils.utils_files import find_files_per_pattern, remove_files_not_in_runs, get_files_per_name, \
-    get_sub_directories, \
-    generate_file_path, get_files_per_model
+    get_sub_directories, generate_file_path, get_files_per_model, get_model_config_files_per_model
 from .utils.utils_pandas import generate_dataframes, write_result, calculate, generate_dataframes_per_model, \
     write_session_meta_result, generate_dataframe_of_model
-from .utils.utils_config import get_data_from_config, get_pattern, get_patterns_to_look_for
+from .utils.utils_config import get_data_from_config, get_pattern, get_patterns_to_look_for, get_model_config_data
 from .utils import nodes_to_list
 
 import os
@@ -95,28 +94,16 @@ class MetaReporter:
 
         data = get_data_from_config("config_data",
                                     path=self.config_path)
-        model_config_path = "D:\\Karriere\\KestrelEye\\MetaReporter\\reports\\session11\\S11_LNRN18s_new_nt_bw1\\run2\\model\\config.json"
 
         node_list = nodes_to_list(data)
-
-        data = {}
-        for nodes in node_list:
-            config_data = get_data_from_config(*nodes, path=model_config_path)
-            if isinstance(config_data, dict):
-                for key, value in config_data.items():
-                    data_key = "_".join([*nodes, key])
-                    data[data_key] = value
-            else:
-                data_key = "_".join(nodes)
-                data[data_key] = config_data
-        ic(data)
+        config_files_per_model = get_model_config_files_per_model(model_paths, self.config_path)
 
         is_generated = True
         for model_path, dataframes in dataframes_of_models.items():
-            config_data = {}
+            config_data = get_model_config_data(config_files_per_model[model_path], node_list,
+                                                ['trainer_epochs', 'optimizer_args_lr'])
             model_data = generate_dataframe_of_model(model_path, dataframes, self.config_path, self.session_metrics,
-                                                     data)
-            ic(model_data.iloc[:, 2])
+                                                     config_data)
             is_generated = is_generated and write_session_meta_result(model_data, result_file_path, nan_rep,
                                                                       duplicated_entry_identifiers)
 

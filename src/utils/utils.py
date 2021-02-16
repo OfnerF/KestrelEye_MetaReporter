@@ -1,5 +1,5 @@
 import re
-from .utils_config import get_pattern
+from .utils_config import get_pattern, get_model_data_from_config
 
 
 def check_name(name, pattern):

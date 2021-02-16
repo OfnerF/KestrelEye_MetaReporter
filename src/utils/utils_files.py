@@ -78,3 +78,17 @@ def get_files_per_model(path, models, config_path):
         files = remove_files_not_in_runs(files, run_pattern, path)
         files_per_model[model] = get_files_per_name(files)
     return files_per_model
+
+
+def get_model_config_files_per_model(models, config_path):
+    config_files_per_model = {}
+    config_pattern = get_pattern("model_config", path=config_path)
+    model_dir_pattern = get_pattern("model_directory", path=config_path)
+    for model in models:
+        files = find_files_per_pattern(model, [config_pattern])
+        files_ = files.copy()
+        for file in files_:
+            if not check_name(os.path.basename(os.path.dirname(file)), model_dir_pattern):
+                files.remove(file)
+        config_files_per_model[model] = files
+    return config_files_per_model

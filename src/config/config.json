@@ -6,7 +6,9 @@
     "meta": "^meta_.+\\.csv$",
     "train_set": "^train_.*\\.csv$",
     "val_set": "^val_.*\\.csv$",
-    "test_set": "^test_.*\\.csv$"
+    "test_set": "^test_.*\\.csv$",
+    "model_directory": "^model$",
+    "model_config": "^config.*\\.json$"
   },
   "look_for": [
     "test_results",
