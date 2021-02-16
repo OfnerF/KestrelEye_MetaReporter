@@ -1,6 +1,6 @@
 {
   "pattern": {
-    "run": "^run[0-9]+$",
+    "run_directory": "^run[0-9]+$",
     "test_results": "^(train|val|test)_testresults\\.csv$",
     "metrics": "^metrics\\.csv$",
     "meta": "^meta_.+\\.csv$",

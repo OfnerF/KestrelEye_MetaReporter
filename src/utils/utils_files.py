@@ -69,7 +69,7 @@ def remove_children(parent, files):
 
 def get_files_per_model(path, models, config_path):
     # get patterns
-    run_pattern = get_pattern('run', config_path)
+    run_pattern = get_pattern('run_directory', config_path)
     file_patterns = get_patterns_to_look_for(config_path)
     files_per_model = {model: [] for model in models}
     # get files

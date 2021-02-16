@@ -48,7 +48,7 @@ class MetaReporter:
         else:
             result_path = model_path
         # get run pattern
-        run_pattern = get_pattern('run', self.config_path)
+        run_pattern = get_pattern('run_directory', self.config_path)
 
         # get files
         file_patterns = get_patterns_to_look_for(self.config_path)
