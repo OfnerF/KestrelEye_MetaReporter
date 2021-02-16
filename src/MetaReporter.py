@@ -1,5 +1,5 @@
 from .utils.utils_files import find_files_per_pattern, remove_files_not_in_runs, get_files_per_name, \
-    get_sub_directories, generate_file_path, get_files_per_model, get_model_config_files_per_model
+    get_sub_directories, generate_file_path, get_files_per_model, get_model_config_files_per_model, get_number_of_runs
 from .utils.utils_pandas import generate_dataframes, write_result, calculate, generate_dataframes_per_model, \
     write_session_meta_result, generate_dataframe_of_model
 from .utils.utils_config import get_data_from_config, get_pattern, get_patterns_to_look_for, get_model_config_data
@@ -90,20 +90,27 @@ class MetaReporter:
 
         nan_rep = get_data_from_config('nan_representation', path=self.config_path)
 
-        duplicated_entry_identifiers = ['Model']
+        duplicated_entry_identifiers = ['model']
 
-        data = get_data_from_config("config_data",
-                                    path=self.config_path)
+        nodes = get_data_from_config("config_data",
+                                     path=self.config_path)
 
-        node_list = nodes_to_list(data)
+        node_list = nodes_to_list(nodes)
         config_files_per_model = get_model_config_files_per_model(model_paths, self.config_path)
+
+        run_pattern = get_pattern('run_directory', path=self.config_path)
 
         is_generated = True
         for model_path, dataframes in dataframes_of_models.items():
+            number_of_runs = get_number_of_runs(model_path, run_pattern)
+
+            data = {'model': os.path.basename(model_path), 'runs': number_of_runs}
             config_data = get_model_config_data(config_files_per_model[model_path], node_list,
                                                 ['trainer_epochs', 'optimizer_args_lr'])
-            model_data = generate_dataframe_of_model(model_path, dataframes, self.config_path, self.session_metrics,
-                                                     config_data)
+            data.update(config_data)
+
+            model_data = generate_dataframe_of_model(dataframes, self.config_path, self.session_metrics,
+                                                     data)
             is_generated = is_generated and write_session_meta_result(model_data, result_file_path, nan_rep,
                                                                       duplicated_entry_identifiers)
 

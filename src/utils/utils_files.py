@@ -92,3 +92,15 @@ def get_model_config_files_per_model(models, config_path):
                 files.remove(file)
         config_files_per_model[model] = files
     return config_files_per_model
+
+
+def check_directory_basename(path, pattern):
+    return check_name(os.path.basename(path), pattern)
+
+
+def get_number_of_runs(model_path, run_pattern):
+    number_of_runs = 0
+    for sub in get_sub_directories(model_path):
+        if check_directory_basename(sub, run_pattern):
+            number_of_runs += 1
+    return number_of_runs

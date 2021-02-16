@@ -60,10 +60,7 @@ def write_session_meta_result(df, result_file, nan_representation, subset):
     return True
 
 
-def generate_dataframe_of_model(model_path, dataframes, config_path, session_metrics, additional_data=None):
-    data = {'Model': os.path.basename(model_path)}
-    if additional_data:
-        data.update(additional_data)
+def generate_dataframe_of_model(dataframes, config_path, session_metrics, data):
     for file_name, dataframe in dataframes.items():
 
         set_name = get_set_name(file_name, config_path)
