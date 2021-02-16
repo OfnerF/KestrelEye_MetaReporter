@@ -90,7 +90,7 @@ class MetaReporter:
 
         nan_rep = get_data_from_config('nan_representation', path=self.config_path)
 
-        duplicated_entry_identifiers = ['Models']
+        duplicated_entry_identifiers = ['Model']
 
         is_generated = True
         for model_path, dataframes in dataframes_of_models.items():
