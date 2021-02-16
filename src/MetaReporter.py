@@ -1,7 +1,12 @@
-from .utils.utils_files import find_files_per_pattern, remove_files_not_in_runs, get_files_per_name, get_model_paths, \
-    remove_children
-from .utils.utils_pandas import generate_dataframes, write_result, calculate
+from .utils.utils_files import find_files_per_pattern, remove_files_not_in_runs, get_files_per_name, \
+    get_sub_directories, \
+    generate_file_path, get_files_per_model
+from .utils.utils_pandas import generate_dataframes, write_result, calculate, generate_dataframes_per_model, \
+    write_session_meta_result, generate_dataframe_of_model
 from .utils.utils_config import get_data_from_config, get_pattern, get_patterns_to_look_for
+
+import os
+from . import ic
 
 
 class MetaReporter:
@@ -54,9 +59,8 @@ class MetaReporter:
 
         # generate dataframes per filename (concatenated)
         group_column = get_data_from_config("class_column_name", path=self.config_path)
-        datasets = generate_dataframes(paths_of_file, group_column, self.drop_rows)
-
-        calculated_dataframes = calculate(datasets, group_by=group_column, metrics=self.model_metrics)
+        dataframes = generate_dataframes(paths_of_file, group_column, self.drop_rows)
+        calculated_dataframes = calculate(dataframes, group_by=group_column, metrics=self.model_metrics)
 
         meta_file_prefix = get_data_from_config('file_prefix', path=self.config_path)
         meta_file_names = ['_'.join([meta_file_prefix, name]) for name in paths_of_file.keys()]
@@ -70,28 +74,28 @@ class MetaReporter:
 
     def generate_per_session(self):
         """ generates the meta report from all models in the session """
-        # get meta files pattern
-        meta_pattern = get_pattern('meta', path=self.config_path)
 
-        # get files
-        for model in get_model_paths(self.path):
-            self.generate_per_model(model)
-        files = find_files_per_pattern(self.path, [meta_pattern])
+        model_paths = get_sub_directories(self.path)
 
-        files = remove_children(self.path, files)
-        files_per_name = get_files_per_name(files)
+        # files_per_model = {model_path: {file_name: file_paths}}
+        files_per_model = get_files_per_model(self.path, model_paths, self.config_path)
 
-        # generate dataframes
-        group_column = get_data_from_config("class_column_name", path=self.config_path)
+        # dataframe_of_models = {model_path: {file_name: dataframe}}
+        dataframes_of_models = generate_dataframes_per_model(model_paths, files_per_model, self.session_metrics,
+                                                             self.drop_rows, self.config_path)
 
-        dataframes = generate_dataframes(files_per_name, group_column, self.drop_rows)
-        # calculate
-        calculated_dataframes = calculate(dataframes, group_column, metrics=self.session_metrics)
+        meta_file_prefix = get_data_from_config('file_prefix', path=self.config_path)
+        result_file_name = '_'.join([meta_file_prefix, ''.join([os.path.basename(self.path), '.csv'])])
+        result_file_path = generate_file_path(self.result_path, result_file_name)
 
-        # write files
-        is_generated = write_result(self.result_path,
-                                    calculated_dataframes,
-                                    files_per_name.keys(),
-                                    get_data_from_config('nan_representation', path=self.config_path))
+        nan_rep = get_data_from_config('nan_representation', path=self.config_path)
+
+        duplicated_entry_identifiers = ['Models']
+
+        is_generated = True
+        for model_path, dataframes in dataframes_of_models.items():
+            model_data = generate_dataframe_of_model(model_path, dataframes, self.config_path, self.session_metrics)
+            is_generated = is_generated and write_session_meta_result(model_data, result_file_path, nan_rep,
+                                                                      duplicated_entry_identifiers)
 
         return is_generated

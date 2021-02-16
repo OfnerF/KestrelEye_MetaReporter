@@ -1,5 +1,6 @@
 import os
 from .utils import check_name
+from .utils_config import get_pattern, get_patterns_to_look_for
 
 
 def find_files_per_pattern(path, look_for):
@@ -54,7 +55,7 @@ def generate_file_path(path, file_name):
     return os.path.join(path, file_name)
 
 
-def get_model_paths(path):
+def get_sub_directories(path):
     return [f.path for f in os.scandir(path) if f.is_dir()]
 
 
@@ -64,3 +65,16 @@ def remove_children(parent, files):
         if os.path.normpath(os.path.dirname(file)) == os.path.normpath(parent):
             files.remove(file)
     return files
+
+
+def get_files_per_model(path, models, config_path):
+    # get patterns
+    run_pattern = get_pattern('run', config_path)
+    file_patterns = get_patterns_to_look_for(config_path)
+    files_per_model = {model: [] for model in models}
+    # get files
+    for model in models:
+        files = find_files_per_pattern(model, file_patterns)
+        files = remove_files_not_in_runs(files, run_pattern, path)
+        files_per_model[model] = get_files_per_name(files)
+    return files_per_model

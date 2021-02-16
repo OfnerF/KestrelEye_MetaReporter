@@ -3,7 +3,10 @@
     "run": "^run[0-9]+$",
     "test_results": "^(train|val|test)_testresults\\.csv$",
     "metrics": "^metrics\\.csv$",
-    "meta": "^meta_.+\\.csv$"
+    "meta": "^meta_.+\\.csv$",
+    "train_set": "^train_.*\\.csv$",
+    "val_set": "^val_.*\\.csv$",
+    "test_set": "^test_.*\\.csv$"
   },
   "look_for": [
     "test_results",
@@ -17,14 +20,12 @@
       "std"
     ],
     "session": [
-      "mean"
+      "mean",
+      "max",
+      "std"
     ]
   },
-  "drop": [
-    "avg",
-    "any",
-    "none"
-  ],
+  "drop": [],
   "file_prefix": "meta",
   "nan_representation": "NULL",
   "class_column_name": "Class"
