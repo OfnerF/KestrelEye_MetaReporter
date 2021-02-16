@@ -25,6 +25,48 @@
       "std"
     ]
   },
+  "config_data": [
+    "name",
+    {
+      "arch": [
+        "type",
+        "args"
+      ]
+    },
+    {
+      "dataset": {
+        "args": [
+          "root_dir",
+          {
+            "data_loader_config": [
+              {
+                "args": [
+                  "batch_size"
+                ]
+              }
+            ]
+          },
+          "weight_config"
+        ]
+      }
+    },
+    {
+      "loss": [
+        "type"
+      ]
+    },
+    {
+      "optimizer": [
+        "type",
+        "args"
+      ]
+    },
+    {
+      "trainer": [
+        "epochs"
+      ]
+    }
+  ],
   "drop": [],
   "file_prefix": "meta",
   "nan_representation": "NULL",

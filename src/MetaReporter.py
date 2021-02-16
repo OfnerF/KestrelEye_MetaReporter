@@ -4,6 +4,7 @@ from .utils.utils_files import find_files_per_pattern, remove_files_not_in_runs,
 from .utils.utils_pandas import generate_dataframes, write_result, calculate, generate_dataframes_per_model, \
     write_session_meta_result, generate_dataframe_of_model
 from .utils.utils_config import get_data_from_config, get_pattern, get_patterns_to_look_for
+from .utils import nodes_to_list
 
 import os
 from . import ic
@@ -92,8 +93,20 @@ class MetaReporter:
 
         duplicated_entry_identifiers = ['Model']
 
+        data = get_data_from_config("config_data",
+                                    path=self.config_path)
+        model_config_path = "D:\\Karriere\\KestrelEye\\MetaReporter\\reports\\session11\\S11_LNRN18s_new_nt_bw1\\run2\\model\\config.json"
+
+        ic(data)
+
+        node_list = nodes_to_list(data)
+
+        for nodes in node_list:
+            ic(nodes, get_data_from_config(*nodes, path=model_config_path))
+
         is_generated = True
         for model_path, dataframes in dataframes_of_models.items():
+            config_data = {}
             model_data = generate_dataframe_of_model(model_path, dataframes, self.config_path, self.session_metrics)
             is_generated = is_generated and write_session_meta_result(model_data, result_file_path, nan_rep,
                                                                       duplicated_entry_identifiers)

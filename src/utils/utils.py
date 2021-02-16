@@ -17,3 +17,31 @@ def get_set_name(file_name, config_path):
     else:
         set_name = None
     return set_name
+
+
+def nodes_to_list(data):
+    def nodes_to_list_(nodes, node_list, current_nodes):
+        if isinstance(nodes, dict):
+            for key, value in nodes.items():
+                temp_nodes = current_nodes.copy()
+                temp_nodes.append(key)
+                new_nodes = nodes_to_list_(value, node_list, temp_nodes)
+
+            return new_nodes
+
+        elif isinstance(nodes, list):
+            for node in nodes:
+                temp_nodes = current_nodes.copy()
+                new_nodes = nodes_to_list_(node, node_list, temp_nodes)
+
+            return new_nodes
+
+        else:
+            current_nodes.append(nodes)
+            node_list.append(current_nodes)
+            return node_list
+
+    result = []
+    for entry in data:
+        result.extend(nodes_to_list_(entry, [], []))
+    return result
