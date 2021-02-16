@@ -60,18 +60,22 @@ def write_session_meta_result(df, result_file, nan_representation, subset):
     return True
 
 
-def generate_dataframe_of_model(model_path, dataframes, config_path, session_metrics):
+def generate_dataframe_of_model(model_path, dataframes, config_path, session_metrics, additional_data=None):
     data = {'Model': os.path.basename(model_path)}
+    if additional_data:
+        data.update(additional_data)
     for file_name, dataframe in dataframes.items():
+
         set_name = get_set_name(file_name, config_path)
-
         if set_name is not None:
-            for col in [col for col in dataframe.columns if
-                        any([check_name(col, "".join([".+_", metric])) for metric in
-                             session_metrics])]:
-                tokens = str(col).split("_")
-
+            # create columns
+            for column in [col for col in dataframe.columns if
+                           any([check_name(col, "".join([".+_", metric])) for metric in
+                                session_metrics])]:
+                tokens = str(column).split("_")
+                # add value into data
                 for clazz in dataframe.index.values:
-                    data["_".join([tokens[0], set_name, tokens[1], clazz])] = [dataframe.loc[clazz, col]]
+                    data["_".join([tokens[0], set_name, tokens[1], clazz])] = [dataframe.loc[clazz, column]]
+
     df = pd.DataFrame(data=data)
     return df

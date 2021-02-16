@@ -97,17 +97,26 @@ class MetaReporter:
                                     path=self.config_path)
         model_config_path = "D:\\Karriere\\KestrelEye\\MetaReporter\\reports\\session11\\S11_LNRN18s_new_nt_bw1\\run2\\model\\config.json"
 
-        ic(data)
-
         node_list = nodes_to_list(data)
 
+        data = {}
         for nodes in node_list:
-            ic(nodes, get_data_from_config(*nodes, path=model_config_path))
+            config_data = get_data_from_config(*nodes, path=model_config_path)
+            if isinstance(config_data, dict):
+                for key, value in config_data.items():
+                    data_key = "_".join([*nodes, key])
+                    data[data_key] = value
+            else:
+                data_key = "_".join(nodes)
+                data[data_key] = config_data
+        ic(data)
 
         is_generated = True
         for model_path, dataframes in dataframes_of_models.items():
             config_data = {}
-            model_data = generate_dataframe_of_model(model_path, dataframes, self.config_path, self.session_metrics)
+            model_data = generate_dataframe_of_model(model_path, dataframes, self.config_path, self.session_metrics,
+                                                     data)
+            ic(model_data.iloc[:, 2])
             is_generated = is_generated and write_session_meta_result(model_data, result_file_path, nan_rep,
                                                                       duplicated_entry_identifiers)
 
