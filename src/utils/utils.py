@@ -1,5 +1,5 @@
 import re
-from .utils_config import get_pattern, get_model_data_from_config
+from .utils_config import get_pattern
 
 
 def check_name(name, pattern):
@@ -20,6 +20,7 @@ def get_set_name(file_name, config_path):
 
 
 def nodes_to_list(data):
+    """transforms the json nodes in a list of nodes"""
     def nodes_to_list_(nodes, node_list, current_nodes):
         if isinstance(nodes, dict):
             for key, value in nodes.items():

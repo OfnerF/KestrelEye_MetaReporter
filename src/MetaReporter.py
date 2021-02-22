@@ -10,7 +10,11 @@ from . import ic
 
 
 class MetaReporter:
-    """ class for generating meta report files """
+    """
+    class for generating meta report files
+    for generating on model level (with same parameters), set level to 0 and path is the path to the model.
+    for generating over models with different parameters, set level to 1 and path is the path of the session.
+    """
 
     def __init__(self, path, result_path, config_path=None, metrics=None, drop_rows=None, level=1):
         self.path = path
@@ -41,7 +45,7 @@ class MetaReporter:
                                    self.drop_rows)
 
     def generate_per_model(self, model_path=None):
-        """ generates the meta report for each model in the session """
+        """ generates the meta report for each model in the session with the same parameters"""
         if model_path is None:
             model_path = self.path
             result_path = self.result_path
@@ -60,14 +64,14 @@ class MetaReporter:
         # generate dataframes per filename (concatenated)
         group_column = get_data_from_config("class_column_name", path=self.config_path)
         dataframes = generate_dataframes(paths_of_file, group_column, self.drop_rows)
+
+        # calculate metrics
         calculated_dataframes = calculate(dataframes, group_by=group_column, metrics=self.model_metrics)
 
         meta_file_prefix = get_data_from_config('file_prefix', path=self.config_path)
         meta_file_names = ['_'.join([meta_file_prefix, name]) for name in paths_of_file.keys()]
 
-        is_generated = write_result(result_path,
-                                    calculated_dataframes,
-                                    meta_file_names,
+        is_generated = write_result(result_path, calculated_dataframes, meta_file_names,
                                     get_data_from_config('nan_representation', path=self.config_path))
 
         return is_generated
@@ -85,32 +89,28 @@ class MetaReporter:
                                                              self.drop_rows, self.config_path)
 
         meta_file_prefix = get_data_from_config('file_prefix', path=self.config_path)
-        result_file_name = '_'.join([meta_file_prefix, ''.join([os.path.basename(self.path), '.csv'])])
+        result_file_name = '_'.join([meta_file_prefix, '.'.join([os.path.basename(self.path), 'csv'])])
         result_file_path = generate_file_path(self.result_path, result_file_name)
 
         nan_rep = get_data_from_config('nan_representation', path=self.config_path)
-
-        duplicated_entry_identifiers = ['model']
-
-        nodes = get_data_from_config("config_data",
-                                     path=self.config_path)
+        duplicated_entry_identifiers = get_data_from_config("duplicates_identifier", path=self.config_path)
+        run_pattern = get_pattern('run_directory', path=self.config_path)
+        multiple_entries_in = get_data_from_config("multiple_entries_in", path=self.config_path)
+        nodes = get_data_from_config("config_data", path=self.config_path)
 
         node_list = nodes_to_list(nodes)
         config_files_per_model = get_model_config_files_per_model(model_paths, self.config_path)
-
-        run_pattern = get_pattern('run_directory', path=self.config_path)
 
         is_generated = True
         for model_path, dataframes in dataframes_of_models.items():
             number_of_runs = get_number_of_runs(model_path, run_pattern)
 
             data = {'model': os.path.basename(model_path), 'runs': number_of_runs}
-            config_data = get_model_config_data(config_files_per_model[model_path], node_list,
-                                                ['trainer_epochs', 'optimizer_args_lr'])
+            config_data = get_model_config_data(config_files_per_model[model_path], node_list, multiple_entries_in)
             data.update(config_data)
 
-            model_data = generate_dataframe_of_model(dataframes, self.config_path, self.session_metrics,
-                                                     data)
+            model_data = generate_dataframe_of_model(dataframes, self.config_path, self.session_metrics, data)
+
             is_generated = is_generated and write_session_meta_result(model_data, result_file_path, nan_rep,
                                                                       duplicated_entry_identifiers)
 

@@ -45,7 +45,7 @@ def get_files_per_name(files):
 
 
 def remove_files_not_in_runs(files, run_pattern, root_dir):
-    for file in files:
+    for file in files.copy():
         if not get_run_of_file(file, run_pattern, root_dir):
             files.remove(file)
     return files
@@ -60,8 +60,7 @@ def get_sub_directories(path):
 
 
 def remove_children(parent, files):
-    files_ = files.copy()
-    for file in files_:
+    for file in files.copy():
         if os.path.normpath(os.path.dirname(file)) == os.path.normpath(parent):
             files.remove(file)
     return files

@@ -72,5 +72,12 @@
   "drop": [],
   "file_prefix": "meta",
   "nan_representation": "NULL",
-  "class_column_name": "Class"
+  "class_column_name": "Class",
+  "multiple_entries_in": [
+    "trainer_epochs",
+    "optimizer_args_lr"
+  ],
+  "duplicates_identifier": [
+    "model"
+  ]
 }
