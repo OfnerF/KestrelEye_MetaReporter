@@ -1,11 +1,14 @@
-from .utils.utils_files import find_files_per_pattern, remove_files_not_in_runs, get_files_per_name, \
-    get_sub_directories, generate_file_path, get_files_per_model, get_model_config_files_per_model, get_number_of_runs
-from .utils.utils_pandas import generate_dataframes, write_result, calculate, generate_dataframes_per_model, \
-    write_session_meta_result, generate_dataframe_of_model
-from .utils.utils_config import get_data_from_config, get_pattern, get_patterns_to_look_for, get_model_config_data
-from .utils import nodes_to_list
-
 import os
+
+from .utils import nodes_to_list
+from .utils.utils_config import get_data_from_config, get_pattern, get_patterns_to_look_for, get_model_config_data
+from .utils.utils_files import find_files_per_pattern, remove_files_not_in_runs, get_files_per_name, \
+    get_sub_directories, get_files_per_model, get_model_config_files_per_model, get_number_of_runs, \
+    generate_file_path
+from .utils.utils_pandas import generate_dataframes, write_result, calculate, generate_dataframes_per_model, \
+    write_session_meta_result, generate_dataframe_of_model, csv_to_dataframe
+from .visualization.BarPlotter import BarPlotter
+
 from . import ic
 
 
@@ -16,7 +19,7 @@ class MetaReporter:
     for generating over models with different parameters, set level to 1 and path is the path of the session.
     """
 
-    def __init__(self, path, result_path, config_path=None, metrics=None, drop_rows=None, level=1):
+    def __init__(self, path, result_path, config_path=None, metrics=None, drop_rows=None, level=1, plot_format=None):
         self.path = path
         self.result_path = result_path
         self.config_path = config_path
@@ -30,6 +33,11 @@ class MetaReporter:
             self.drop_rows = drop_rows
         else:
             self.drop_rows = get_data_from_config('drop', path=self.config_path)
+
+        if plot_format is not None:
+            self.plot_format = plot_format
+        else:
+            self.plot_format = get_data_from_config("plot_format", path=self.config_path)
 
         if level == 0:
             self.generate_per_model()
@@ -71,8 +79,15 @@ class MetaReporter:
         meta_file_prefix = get_data_from_config('file_prefix', path=self.config_path)
         meta_file_names = ['_'.join([meta_file_prefix, name]) for name in paths_of_file.keys()]
 
+        # generate result csv files
         is_generated = write_result(result_path, calculated_dataframes, meta_file_names,
                                     get_data_from_config('nan_representation', path=self.config_path))
+
+        # generate bar plots
+        for file_name in meta_file_names:
+            file_path = generate_file_path(model_path, file_name)
+            output_file_name = file_name.split('.')[0]
+            self.generate_bar_plot(file_path, output_file_name, group_column, output_file_name)
 
         return is_generated
 
@@ -117,3 +132,8 @@ class MetaReporter:
                                                                       duplicated_entry_identifiers)
 
         return is_generated
+
+    def generate_bar_plot(self, input_file_path, output_file_name, index, title):
+        df = csv_to_dataframe(input_file_path, index, drop=get_data_from_config('drop', path=self.config_path))
+        plot = BarPlotter(dataframe=df, result_path=self.result_path, file_name=output_file_name, title=title)
+        plot.save_as(self.plot_format)

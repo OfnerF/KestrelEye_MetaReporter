@@ -69,7 +69,11 @@
       ]
     }
   ],
-  "drop": [],
+  "drop": [
+    "avg",
+    "any",
+    "none"
+  ],
   "file_prefix": "meta",
   "nan_representation": "NULL",
   "class_column_name": "Class",
@@ -79,5 +83,6 @@
   ],
   "duplicates_identifier": [
     "model"
-  ]
+  ],
+  "plot_format": "pdf"
 }

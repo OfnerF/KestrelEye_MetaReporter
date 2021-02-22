@@ -76,3 +76,9 @@ def generate_dataframe_of_model(dataframes, config_path, session_metrics, data):
 
     df = pd.DataFrame(data=data)
     return df
+
+
+def csv_to_dataframe(path, index, drop=[]):
+    df = pd.read_csv(path, index_col=index)
+    rows = [row for row in df.index if row not in drop]
+    return df.loc[rows]
