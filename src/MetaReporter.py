@@ -96,9 +96,12 @@ class MetaReporter:
         duplicated_entry_identifiers = get_data_from_config("duplicates_identifier", path=self.config_path)
         run_pattern = get_pattern('run_directory', path=self.config_path)
         multiple_entries_in = get_data_from_config("multiple_entries_in", path=self.config_path)
-        nodes = get_data_from_config("config_data", path=self.config_path)
 
+        # get the nodes from the config file and transform them into a list
+        nodes = get_data_from_config("config_data", path=self.config_path)
         node_list = nodes_to_list(nodes)
+
+        # config_files_per_model = {model_path: [config_file_paths]}
         config_files_per_model = get_model_config_files_per_model(model_paths, self.config_path)
 
         is_generated = True
@@ -110,7 +113,6 @@ class MetaReporter:
             data.update(config_data)
 
             model_data = generate_dataframe_of_model(dataframes, self.config_path, self.session_metrics, data)
-
             is_generated = is_generated and write_session_meta_result(model_data, result_file_path, nan_rep,
                                                                       duplicated_entry_identifiers)
 
