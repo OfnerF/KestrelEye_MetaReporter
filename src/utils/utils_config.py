@@ -37,7 +37,7 @@ def get_model_data_from_config(node_list, model_config_path):
     return data
 
 
-def get_model_config_data(model_config_paths, node_list, different_values_in):
+def get_model_config_data(model_config_paths, node_list, different_values_in, split_by='/'):
     data = dict()
     for model_config in model_config_paths:
         new_data = get_model_data_from_config(node_list, model_config)
@@ -45,7 +45,9 @@ def get_model_config_data(model_config_paths, node_list, different_values_in):
             if key not in data.keys():
                 data[key] = value
             else:
-                if key in different_values_in:
-                    current_values = list(set(str(data[key]).split('/')))
-                    data[key] = '/'.join([*current_values, str(value)])
+                if key in different_values_in and str(value) not in set(str(data[key]).split(split_by)):
+                    values = str(data[key]).split(split_by)
+                    values.append(str(value))
+                    values.sort()
+                    data[key] = split_by.join(values)
     return data
