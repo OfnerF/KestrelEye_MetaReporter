@@ -6,8 +6,9 @@ from .utils.utils_files import find_files_per_pattern, remove_files_not_in_runs,
     get_sub_directories, get_files_per_model, get_model_config_files_per_model, get_number_of_runs, \
     generate_file_path
 from .utils.utils_pandas import generate_dataframes, write_result, calculate, generate_dataframes_per_model, \
-    write_session_meta_result, generate_dataframe_of_model, csv_to_dataframe
+    write_session_meta_result, generate_dataframe_of_model
 from .visualization.BarPlotter import BarPlotter
+from .visualization.ViolinPlotter import ViolinPlotter
 
 from . import ic
 
@@ -71,10 +72,10 @@ class MetaReporter:
 
         # generate dataframes per filename (concatenated)
         group_column = get_data_from_config("class_column_name", path=self.config_path)
-        dataframes = generate_dataframes(paths_of_file, group_column, self.drop_rows)
+        dataframes_per_file = generate_dataframes(paths_of_file, group_column, self.drop_rows)
 
         # calculate metrics
-        calculated_dataframes = calculate(dataframes, group_by=group_column, metrics=self.model_metrics)
+        calculated_dataframes = calculate(dataframes_per_file, group_by=group_column, metrics=self.model_metrics)
 
         meta_file_prefix = get_data_from_config('file_prefix', path=self.config_path)
         meta_file_names = ['_'.join([meta_file_prefix, name]) for name in paths_of_file.keys()]
@@ -84,10 +85,21 @@ class MetaReporter:
                                     get_data_from_config('nan_representation', path=self.config_path))
 
         # generate bar plots
+        bar_plot_per_file = dict()
         for file_name in meta_file_names:
-            file_path = generate_file_path(model_path, file_name)
             output_file_name = file_name.split('.')[0]
-            self.generate_bar_plot(file_path, output_file_name, group_column, output_file_name)
+            plot = self.generate_bar_plot(calculated_dataframes[file_name.replace("meta_", "")], output_file_name,
+                                          output_file_name)
+            bar_plot_per_file[file_name] = plot
+
+        # generate violin plots
+        for file_name, dataframe in dataframes_per_file.items():
+            output_file_name = file_name.split('.')[0]
+            # sort violin chart like bar plot
+            sorted_classes = [data.name for data in
+                              bar_plot_per_file['_'.join([meta_file_prefix, file_name])].figure.data]
+            dataframe.reset_index(drop=False, inplace=True)
+            self.generate_violin_plot(dataframe, output_file_name, output_file_name, sorted_classes)
 
         return is_generated
 
@@ -133,7 +145,20 @@ class MetaReporter:
 
         return is_generated
 
-    def generate_bar_plot(self, input_file_path, output_file_name, index, title):
-        df = csv_to_dataframe(input_file_path, index, drop=get_data_from_config('drop', path=self.config_path))
-        plot = BarPlotter(dataframe=df, result_path=self.result_path, file_name=output_file_name, title=title)
+    def generate_bar_plot(self, dataframe, output_file_name, title):
+        plot = BarPlotter(dataframe=dataframe, result_path=self.result_path, file_name=output_file_name, title=title)
+        plot.save_as(self.plot_format)
+        return plot
+
+    def generate_violin_plot(self, dataframe, output_file_name, title, order):
+        plot = ViolinPlotter(dataframe, self.result_path, output_file_name, title)
+
+        # sort traces with bar order
+        ordered_traces = []
+        for clazz in order:
+            for violin in plot.figure.data:
+                if violin.name == clazz:
+                    ordered_traces.append(violin)
+
+        plot.figure.data = ordered_traces
         plot.save_as(self.plot_format)
