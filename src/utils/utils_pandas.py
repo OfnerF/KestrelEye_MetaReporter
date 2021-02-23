@@ -19,6 +19,28 @@ def generate_dataframes(paths_of_file, index_name, drop_rows):
     return file_dataframes
 
 
+def generate_dataframes_with_run(paths_per_run_of_file, index_name, drop_rows):
+    file_dataframes = {file_name: None for file_name in paths_per_run_of_file.keys()}
+
+    for file_name, runs in paths_per_run_of_file.items():
+        dataframes = []
+        for run, file_path in runs.items():
+            dataframe = pd.read_csv(file_path)
+            dataframe['Run'] = run.replace('run', '')
+            dataframes.append(dataframe)
+
+        dataframes = pd.concat(dataframes, ignore_index=True)
+
+        dataframes.set_index(list(dataframes.columns)[0], inplace=True)
+        dataframes.index.set_names(index_name, inplace=True)
+
+        dataframes.drop(index=drop_rows, inplace=True, errors='ignore')
+
+        file_dataframes[file_name] = dataframes
+
+    return file_dataframes
+
+
 def calculate(dataframes, group_by, metrics):
     calculated = {name: None for name in dataframes.keys()}
     for name, df in dataframes.items():
@@ -82,3 +104,8 @@ def csv_to_dataframe(path, index, drop=[]):
     df = pd.read_csv(path, index_col=index)
     rows = [row for row in df.index if row not in drop]
     return df.loc[rows]
+
+
+def get_interval_index(interval, value):
+    matched_intervals = [idx for idx, x in enumerate(interval.contains(value)) if x]
+    return matched_intervals[0] if len(matched_intervals) > 0 else 0
