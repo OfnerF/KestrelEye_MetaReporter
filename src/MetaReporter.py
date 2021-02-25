@@ -5,14 +5,12 @@ from .utils.utils_config import get_data_from_config, get_pattern, get_patterns_
 from .utils.utils_files import find_files_per_pattern, remove_files_not_in_runs, get_sub_directories, \
     get_files_per_model, get_model_config_files_per_model, get_number_of_runs, \
     generate_file_path, get_paths_per_run_of_name
-from .utils.utils_pandas import dataframes_to_csv, calculate, generate_dataframes_per_model, \
-    write_session_meta_result, generate_dataframe_of_model, generate_dataframes_with_run, \
+from .utils.utils_pandas import dataframes_to_csv, calculate, generate_dataframe_of_file_per_model, \
+    write_session_meta_result, generate_summary_dataframe_of_model, generate_dataframes_with_run, \
     get_dataframes_per_file_for_table_plot
 from .visualization.BarPlotter import BarPlotter
 from .visualization.ViolinPlotter import ViolinPlotter
 from .visualization.TablePlotter import TablePlotter
-
-from . import ic
 
 
 class MetaReporter:
@@ -79,8 +77,8 @@ class MetaReporter:
 
         # calculate metrics
         # {filename: dataframe}
-        calculated_dfs_per_file = calculate(dataframes_per_file, drop_columns=['Run'], group_by=group_column,
-                                            metrics=self.model_metrics)
+        calculated_dfs_per_file = calculate(dataframes_per_file, group_by=group_column, metrics=self.model_metrics,
+                                            drop_columns=['Run'])
 
         meta_file_prefix = get_data_from_config('file_prefix', path=self.config_path)
         meta_file_names = ['_'.join([meta_file_prefix, name]) for name in dataframes_per_file.keys()]
@@ -131,8 +129,8 @@ class MetaReporter:
         files_per_model = get_files_per_model(self.path, model_paths, self.config_path)
 
         # dataframe_of_models = {model_path: {file_name: dataframe}}
-        dataframes_of_models = generate_dataframes_per_model(model_paths, files_per_model, self.session_metrics,
-                                                             self.drop_rows, self.config_path)
+        dataframes_of_models = generate_dataframe_of_file_per_model(model_paths, files_per_model, self.session_metrics,
+                                                                    self.drop_rows, self.config_path)
 
         meta_file_prefix = get_data_from_config('file_prefix', path=self.config_path)
         result_file_name = '_'.join([meta_file_prefix, '.'.join([os.path.basename(self.path), 'csv'])])
@@ -158,7 +156,7 @@ class MetaReporter:
             config_data = get_model_config_data(config_files_per_model[model_path], node_list, multiple_entries_in)
             data.update(config_data)
 
-            model_data = generate_dataframe_of_model(dataframes, self.config_path, self.session_metrics, data)
+            model_data = generate_summary_dataframe_of_model(dataframes, self.config_path, self.session_metrics, data)
             is_generated = is_generated and write_session_meta_result(model_data, result_file_path, nan_rep,
                                                                       duplicated_entry_identifiers)
 

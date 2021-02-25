@@ -3,7 +3,7 @@ from colour import Color
 import plotly.graph_objs as go
 
 from .Plotter import Plotter
-from ..utils.utils_pandas import get_interval_index
+from ..utils.utils_pandas import get_interval_index_of_value
 
 
 class TablePlotter(Plotter):
@@ -52,7 +52,7 @@ class TablePlotter(Plotter):
                 interval_list = interval_list_1
 
             interval_dataframe[column] = self.dataframe[column].map(
-                lambda value: get_interval_index(interval_list, value))
+                lambda value: get_interval_index_of_value(interval_list, value))
 
         # colors
         color_low = Color('#e60000')  # red

@@ -22,6 +22,7 @@ def generate_dataframe_per_file_name(paths_per_file, index_name, drop_rows):
 
 
 def generate_dataframes_with_run(paths_per_run_of_file, index_name, drop_rows):
+    """Generates dataframes per filename, adds a column Run"""
     file_dataframes = {file_name: None for file_name in paths_per_run_of_file.keys()}
 
     for file_name, runs in paths_per_run_of_file.items():
@@ -43,7 +44,8 @@ def generate_dataframes_with_run(paths_per_run_of_file, index_name, drop_rows):
     return file_dataframes
 
 
-def calculate(dataframes, drop_columns, group_by, metrics):
+def calculate(dataframes, group_by, metrics, drop_columns=[]):
+    """Calculates the given metrics of eacht column"""
     calculated = {name: None for name in dataframes.keys()}
     for name, df in dataframes.items():
         columns = [column for column in df.columns if column not in drop_columns]
@@ -61,12 +63,15 @@ def calculate(dataframes, drop_columns, group_by, metrics):
 
 
 def dataframes_to_csv(path, dataframes_per_file, output_file_names, nan_representation):
+    """Writes each dataframe into a csv"""
     for df_name, name in zip(dataframes_per_file, output_file_names):
         dataframes_per_file[df_name].to_csv(generate_file_path(path, name), na_rep=nan_representation, mode='w')
     return True
 
 
-def generate_dataframes_per_model(models, files_per_model, session_metrics, drop_rows, config_path):
+def generate_dataframe_of_file_per_model(models, files_per_model, session_metrics, drop_rows, config_path):
+    """Generates one dataframe for each file per model.
+    Return dict of the form {model_path: {filename:dataframe}}"""
     group_column = get_data_from_config("class_column_name", path=config_path)
     dataframes_of_models = {model: None for model in models}
     for model, files_by_name in files_per_model.items():
@@ -78,6 +83,7 @@ def generate_dataframes_per_model(models, files_per_model, session_metrics, drop
 
 
 def write_session_meta_result(df, result_file, nan_representation, subset):
+    """Writes the result of the session to the specified file, appends if file exists already"""
     if os.path.exists(result_file):
         existing_df = pd.read_csv(result_file)
         df = existing_df.append(df, ignore_index=True)
@@ -86,7 +92,8 @@ def write_session_meta_result(df, result_file, nan_representation, subset):
     return True
 
 
-def generate_dataframe_of_model(dataframes, config_path, session_metrics, data):
+def generate_summary_dataframe_of_model(dataframes, config_path, session_metrics, data):
+    """Generates a dataframe which contains all information about the model"""
     for file_name, dataframe in dataframes.items():
 
         set_name = get_set_name(file_name, config_path)
@@ -104,13 +111,8 @@ def generate_dataframe_of_model(dataframes, config_path, session_metrics, data):
     return df
 
 
-def csv_to_dataframe(path, index, drop=[]):
-    df = pd.read_csv(path, index_col=index)
-    rows = [row for row in df.index if row not in drop]
-    return df.loc[rows]
-
-
-def get_interval_index(interval, value):
+def get_interval_index_of_value(interval, value):
+    """Returns the interval index of the given intervals, in which the value is present."""
     matched_intervals = [idx for idx, x in enumerate(interval.contains(value)) if x]
     return matched_intervals[0] if len(matched_intervals) > 0 else 0
 

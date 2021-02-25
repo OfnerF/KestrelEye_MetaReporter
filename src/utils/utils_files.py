@@ -59,13 +59,6 @@ def get_sub_directories(path):
     return [f.path for f in os.scandir(path) if f.is_dir()]
 
 
-def remove_children(parent, files):
-    for file in files.copy():
-        if os.path.normpath(os.path.dirname(file)) == os.path.normpath(parent):
-            files.remove(file)
-    return files
-
-
 def get_files_per_model(path, models, config_path):
     # get patterns
     run_pattern = get_pattern('run_directory', config_path)
@@ -106,6 +99,7 @@ def get_number_of_runs(model_path, run_pattern):
 
 
 def get_paths_per_run_of_name(files, run_pattern, root_dir):
+    """Returns a dict in the form of {filename: {run: path}}"""
     file_names = extract_file_names(files)
 
     paths_per_run_of_file = {file_name: dict() for file_name in file_names}
