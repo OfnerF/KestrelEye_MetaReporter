@@ -103,3 +103,15 @@ def get_number_of_runs(model_path, run_pattern):
         if check_directory_basename(sub, run_pattern):
             number_of_runs += 1
     return number_of_runs
+
+
+def get_paths_per_run_of_name(files, run_pattern, root_dir):
+    file_names = extract_file_names(files)
+
+    paths_per_run_of_file = {file_name: dict() for file_name in file_names}
+    for file in files:
+        run = get_run_of_file(file, run_pattern, root_dir)
+        file_name = get_file_name(file)
+        paths_per_run_of_file[file_name][run] = file
+
+    return paths_per_run_of_file
