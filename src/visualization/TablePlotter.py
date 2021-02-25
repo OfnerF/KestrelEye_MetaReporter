@@ -7,13 +7,14 @@ from ..utils.utils_pandas import get_interval_index
 
 
 class TablePlotter(Plotter):
+    """Class for generating tables"""
     def __init__(self, dataframe, result_path, file_name, title):
         self.precision = 6
         super().__init__(dataframe, result_path, file_name, title)
 
     def generate(self):
-        # put std to the end
         columns = list(self.dataframe.columns)
+        # put std to the end
         columns.sort(key=lambda x: 'std' in x)
         self.dataframe = self.dataframe[columns]
 
