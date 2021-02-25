@@ -1,6 +1,7 @@
 import plotly.graph_objs as go
 import plotly.express as px
 from .Plotter import Plotter
+from ..utils.utils_visualization import get_color_map
 
 
 class BarPlotter(Plotter):
@@ -15,13 +16,9 @@ class BarPlotter(Plotter):
 
         colors = px.colors.qualitative.Plotly
         traces = []
-        color_map = {}
+        color_map = get_color_map(colors, self.dataframe.index)
 
-        for idx, clazz in enumerate(self.dataframe.index):
-            # fill color map
-            if clazz not in color_map:
-                color_map[clazz] = colors[idx % len(colors)]
-
+        for clazz in self.dataframe.index:
             # get data
             y = self.dataframe.loc[clazz, columns]
 

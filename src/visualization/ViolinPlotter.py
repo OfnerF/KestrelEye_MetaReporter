@@ -2,19 +2,26 @@ import plotly.graph_objs as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 from .Plotter import Plotter
+from ..utils.utils_visualization import get_color_map
 
 
 class ViolinPlotter(Plotter):
+    """Class for generating violin plots"""
+
     def __init__(self, dataframe, result_path, file_name, title):
         super().__init__(dataframe, result_path, file_name, title)
 
     def generate(self):
         columns = list(self.dataframe.columns)
-        for col in ['Class']:
-            columns.remove(col)
 
+        # remove Class column
+        for column in ['Class']:
+            columns.remove(column)
+
+        # create figure as subplots
         fig = make_subplots(
-            rows=len(columns), cols=1,
+            rows=len(columns),
+            cols=1,
             shared_xaxes=False,
             subplot_titles=columns,
         )
@@ -23,12 +30,10 @@ class ViolinPlotter(Plotter):
         colors = px.colors.qualitative.Plotly
 
         # map color to class
-        color_map = {}
+        color_map = get_color_map(colors, self.dataframe['Class'])
 
         for column_idx, column in enumerate(columns):
-            for idx, clazz in enumerate(self.dataframe['Class']):
-                if clazz not in color_map:
-                    color_map[clazz] = colors[idx % len(colors)]
+            for clazz in self.dataframe['Class']:
 
                 fig.add_trace(
                     go.Violin(
@@ -45,6 +50,7 @@ class ViolinPlotter(Plotter):
                     col=1
                 )
 
+        # layout of all traces
         fig.update_traces(box_visible=False, showlegend=True, meanline_visible=True)
 
         # hide duplicate labels
