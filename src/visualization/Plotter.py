@@ -17,12 +17,15 @@ class Plotter(ABC):
 
     @abstractmethod
     def generate(self):
+        """Generates and returns the plot."""
         pass
 
     def save_as(self, file_format):
+        """Saves the plot in the given format."""
         if file_format == 'html':
+            """html files are interactive"""
             self.figure.write_html(file=generate_file_path(self.result_path, '.'.join([self.file_name, "html"])))
-        elif file_format in ['pdf', 'svg', 'pdf', 'jpg', 'jpeg']:
+        elif file_format in ['pdf', 'svg', 'png', 'jpg', 'jpeg']:
             self.figure.write_image(
                 file=generate_file_path(self.result_path, '.'.join([self.file_name, file_format])))
         else:
