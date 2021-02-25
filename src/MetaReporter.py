@@ -1,15 +1,13 @@
 import os
-from functools import reduce
-import pandas as pd
 
 from .utils import nodes_to_list
 from .utils.utils_config import get_data_from_config, get_pattern, get_patterns_to_look_for, get_model_config_data
-from .utils.utils_files import find_files_per_pattern, remove_files_not_in_runs, get_files_per_name, \
-    get_sub_directories, get_files_per_model, get_model_config_files_per_model, get_number_of_runs, \
-    generate_file_path, get_run_of_file, get_paths_per_run_of_name
-from .utils.utils_pandas import generate_dataframe_per_file_name, dataframes_to_csv, calculate, \
-    generate_dataframes_per_model, write_session_meta_result, generate_dataframe_of_model, generate_dataframes_with_run, \
-    add_run_to_column_names
+from .utils.utils_files import find_files_per_pattern, remove_files_not_in_runs, get_sub_directories, \
+    get_files_per_model, get_model_config_files_per_model, get_number_of_runs, \
+    generate_file_path, get_paths_per_run_of_name
+from .utils.utils_pandas import dataframes_to_csv, calculate, generate_dataframes_per_model, \
+    write_session_meta_result, generate_dataframe_of_model, generate_dataframes_with_run, \
+    get_dataframes_per_file_for_table_plot
 from .visualization.BarPlotter import BarPlotter
 from .visualization.ViolinPlotter import ViolinPlotter
 from .visualization.TablePlotter import TablePlotter
@@ -65,27 +63,27 @@ class MetaReporter:
         else:
             result_path = model_path
 
-        # get run pattern
         run_pattern = get_pattern('run_directory', self.config_path)
+        group_column = get_data_from_config("class_column_name", path=self.config_path)
 
         # get files
         file_patterns = get_patterns_to_look_for(self.config_path)
         files = find_files_per_pattern(model_path, file_patterns)
         files = remove_files_not_in_runs(files, run_pattern, model_path)
 
-        # {filename: [paths]}
-        paths_per_file = get_files_per_name(files)
+        # {filename: {run: path}}
+        paths_per_run_of_file = get_paths_per_run_of_name(files, run_pattern, self.path)
 
-        group_column = get_data_from_config("class_column_name", path=self.config_path)
-        # {filename: dataframe(containing each file)}
-        dataframes_per_file = generate_dataframe_per_file_name(paths_per_file, group_column, self.drop_rows)
+        # {filename: {dataframe}}, dataframe has column Run
+        dataframes_per_file = generate_dataframes_with_run(paths_per_run_of_file, group_column, self.drop_rows)
 
         # calculate metrics
         # {filename: dataframe}
-        calculated_dfs_per_file = calculate(dataframes_per_file, group_by=group_column, metrics=self.model_metrics)
+        calculated_dfs_per_file = calculate(dataframes_per_file, drop_columns=['Run'], group_by=group_column,
+                                            metrics=self.model_metrics)
 
         meta_file_prefix = get_data_from_config('file_prefix', path=self.config_path)
-        meta_file_names = ['_'.join([meta_file_prefix, name]) for name in paths_per_file.keys()]
+        meta_file_names = ['_'.join([meta_file_prefix, name]) for name in dataframes_per_file.keys()]
 
         # generate result csv files
         nan_repr = get_data_from_config('nan_representation', path=self.config_path)
@@ -109,28 +107,14 @@ class MetaReporter:
             # sort violin chart corresponding to bar plot
             meta_file_name = '_'.join([meta_file_prefix, file_name])
             sorted_classes = [trace.name for trace in bar_plot_per_file[meta_file_name].figure.data]
-            self.generate_violin_plot(dataframe, output_file_name, title, sorted_classes)
 
-        ##########################################
-        # calculated dataframes usable for meta columns
-        # add run to dataframes per file
-        # {filename: {run: path}}
-        paths_per_run_of_file = get_paths_per_run_of_name(files, run_pattern, self.path)
-
-        # {filename: {dataframe}}, dataframe has column Run
-        dataframes_per_file_with_run = generate_dataframes_with_run(paths_per_run_of_file, group_column, self.drop_rows)
-
-        # {filename: {dataframe}}, run is added to column name
-        dataframes_per_file_run_added = add_run_to_column_names(dataframes_per_file_with_run, 'Run')
-
-        # add calculation dataframe to dataframe with runs in column name
-        for file_name, dataframe in dataframes_per_file_run_added.items():
-            dataframes_per_file_run_added[file_name] = pd.concat([dataframe, calculated_dfs_per_file[file_name]],
-                                                                 axis='columns')
-        ##########################################
+            self.generate_violin_plot(dataframe, output_file_name, title, sorted_classes, drop_columns=['Run'])
 
         # generate table plots
-        for file_name, dataframe in dataframes_per_file_run_added.items():
+        # calculated dataframes usable for meta columns
+        dataframes_per_file_for_tables = get_dataframes_per_file_for_table_plot(dataframes_per_file,
+                                                                                calculated_dfs_per_file)
+        for file_name, dataframe in dataframes_per_file_for_tables.items():
             file_name = file_name.split('.')[0]
             output_file_name = '_'.join(['table', file_name])
 
@@ -185,9 +169,10 @@ class MetaReporter:
         plot.save_as(self.plot_format)
         return plot
 
-    def generate_violin_plot(self, dataframe, output_file_name, title, order):
-        dataframe.reset_index(drop=False, inplace=True)
-        plot = ViolinPlotter(dataframe, self.result_path, output_file_name, title)
+    def generate_violin_plot(self, dataframe, output_file_name, title, order, drop_columns=[]):
+        df = dataframe.reset_index(drop=False)
+        df = df[[column for column in df.columns if column not in drop_columns]]
+        plot = ViolinPlotter(df, self.result_path, output_file_name, title)
 
         # sort traces with bar order
         ordered_traces = []
@@ -200,8 +185,8 @@ class MetaReporter:
         plot.save_as(self.plot_format)
 
     def generate_table_plot(self, dataframe, output_file_name, title):
-        dataframe.reset_index(drop=False, inplace=True)
-        plot = TablePlotter(dataframe=dataframe, result_path=self.result_path,
+        df = dataframe.reset_index(drop=False, inplace=False)
+        plot = TablePlotter(dataframe=df, result_path=self.result_path,
                             file_name=output_file_name, title=title)
         plot.save_as(self.plot_format)
         return plot

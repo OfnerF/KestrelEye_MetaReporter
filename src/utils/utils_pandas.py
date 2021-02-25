@@ -43,9 +43,11 @@ def generate_dataframes_with_run(paths_per_run_of_file, index_name, drop_rows):
     return file_dataframes
 
 
-def calculate(dataframes, group_by, metrics):
+def calculate(dataframes, drop_columns, group_by, metrics):
     calculated = {name: None for name in dataframes.keys()}
     for name, df in dataframes.items():
+        columns = [column for column in df.columns if column not in drop_columns]
+        df = df[columns]
         grouped_file_data = df.groupby(group_by, group_keys=False, as_index=True, sort=False)
         # calculate stats
         aggregated = grouped_file_data.agg(metrics)
@@ -116,9 +118,9 @@ def get_interval_index(interval, value):
 def add_run_to_column_names(dataframes_per_file, run_column='Run'):
     """Add the run, given as Series in the Dataframe, to the column names -> dataframe is reshaped"""
     dataframes_per_files_with_run = {file_name: None for file_name in dataframes_per_file.keys()}
+
     for file_name, dataframe in dataframes_per_file.items():
         df_groups = dataframe.groupby(run_column)
-
         # prepare dataframe
         dfs = []
         for name, group in df_groups:
@@ -132,3 +134,15 @@ def add_run_to_column_names(dataframes_per_file, run_column='Run'):
         dataframes_per_files_with_run[file_name] = merged_dfs
 
     return dataframes_per_files_with_run
+
+
+def get_dataframes_per_file_for_table_plot(dataframes_per_file, calculated_dataframes_per_file):
+    """Writes the run to the column name and adds the calculation result."""
+    dataframes_per_file_new = add_run_to_column_names(dataframes_per_file, 'Run')
+
+    # add calculation dataframe to dataframe with runs in column name
+    for file_name, dataframe in dataframes_per_file_new.items():
+        dataframes_per_file_new[file_name] = pd.concat([dataframe, calculated_dataframes_per_file[file_name]],
+                                                       axis='columns')
+
+    return dataframes_per_file_new
