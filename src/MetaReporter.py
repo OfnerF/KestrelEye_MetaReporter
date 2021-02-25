@@ -7,7 +7,7 @@ from .utils.utils_config import get_data_from_config, get_pattern, get_patterns_
 from .utils.utils_files import find_files_per_pattern, remove_files_not_in_runs, get_files_per_name, \
     get_sub_directories, get_files_per_model, get_model_config_files_per_model, get_number_of_runs, \
     generate_file_path, get_run_of_file
-from .utils.utils_pandas import generate_dataframes, write_result, calculate, generate_dataframes_per_model, \
+from .utils.utils_pandas import generate_dataframe_per_file_name, dataframes_to_csv, calculate, generate_dataframes_per_model, \
     write_session_meta_result, generate_dataframe_of_model, generate_dataframes_with_run
 from .visualization.BarPlotter import BarPlotter
 from .visualization.ViolinPlotter import ViolinPlotter
@@ -18,7 +18,7 @@ from . import ic
 
 class MetaReporter:
     """
-    class for generating meta report files
+    Class for generating meta report files and plots.
     for generating on model level (with same parameters), set level to 0 and path is the path to the model.
     for generating over models with different parameters, set level to 1 and path is the path of the session.
     """
@@ -63,6 +63,7 @@ class MetaReporter:
             result_path = self.result_path
         else:
             result_path = model_path
+
         # get run pattern
         run_pattern = get_pattern('run_directory', self.config_path)
 
@@ -71,21 +72,23 @@ class MetaReporter:
         files = find_files_per_pattern(model_path, file_patterns)
         files = remove_files_not_in_runs(files, run_pattern, model_path)
 
-        paths_of_file = get_files_per_name(files)
+        # {filename: [paths]}
+        paths_per_file = get_files_per_name(files)
 
-        # generate dataframes per filename (concatenated)
         group_column = get_data_from_config("class_column_name", path=self.config_path)
-        dataframes_per_file = generate_dataframes(paths_of_file, group_column, self.drop_rows)
+        # {filename: dataframe(containing each file)}
+        dataframes_per_file = generate_dataframe_per_file_name(paths_per_file, group_column, self.drop_rows)
 
         # calculate metrics
-        calculated_dataframes = calculate(dataframes_per_file, group_by=group_column, metrics=self.model_metrics)
+        # {filename: dataframe}
+        calculated_dfs_per_file = calculate(dataframes_per_file, group_by=group_column, metrics=self.model_metrics)
 
         meta_file_prefix = get_data_from_config('file_prefix', path=self.config_path)
-        meta_file_names = ['_'.join([meta_file_prefix, name]) for name in paths_of_file.keys()]
+        meta_file_names = ['_'.join([meta_file_prefix, name]) for name in paths_per_file.keys()]
 
         # generate result csv files
-        is_generated = write_result(result_path, calculated_dataframes, meta_file_names,
-                                    get_data_from_config('nan_representation', path=self.config_path))
+        nan_repr = get_data_from_config('nan_representation', path=self.config_path)
+        is_generated = dataframes_to_csv(result_path, calculated_dfs_per_file, meta_file_names, nan_repr)
 
         # generate bar plots
         bar_plot_per_file = dict()
@@ -93,7 +96,7 @@ class MetaReporter:
             title = file_name.split('.')[0]
             output_file_name = '_'.join(['bar', title])
 
-            plot = self.generate_bar_plot(calculated_dataframes[file_name.replace("meta_", "")], output_file_name,
+            plot = self.generate_bar_plot(calculated_dfs_per_file[file_name.replace("meta_", "")], output_file_name,
                                           title)
             bar_plot_per_file[file_name] = plot
 
@@ -102,17 +105,17 @@ class MetaReporter:
             title = file_name.split('.')[0]
             output_file_name = '_'.join(['violin', title])
 
-            # sort violin chart like bar plot
-            sorted_classes = [data.name for data in
-                              bar_plot_per_file['_'.join([meta_file_prefix, file_name])].figure.data]
+            # sort violin chart corresponding to bar plot
+            meta_file_name = '_'.join([meta_file_prefix, file_name])
+            sorted_classes = [trace.name for trace in bar_plot_per_file[meta_file_name].figure.data]
             dataframe.reset_index(drop=False, inplace=True)
             self.generate_violin_plot(dataframe, output_file_name, title, sorted_classes)
 
 
         # calculated dataframes usable for meta columns
         # add run to dataframes per file
-        paths_per_run_of_file = {name: dict() for name in paths_of_file.keys()}
-        for file_name, file_paths in paths_of_file.items():
+        paths_per_run_of_file = {name: dict() for name in paths_per_file.keys()}
+        for file_name, file_paths in paths_per_file.items():
             for path in file_paths:
                 run = get_run_of_file(path, run_pattern, self.path)
                 paths_per_run_of_file[file_name].update({run: path})
@@ -136,7 +139,7 @@ class MetaReporter:
         #####################################
 
         for file_name, dataframe in dataframes_per_file_run_added.items():
-            dataframes_per_file_run_added[file_name] = pd.concat([dataframe, calculated_dataframes[file_name]],
+            dataframes_per_file_run_added[file_name] = pd.concat([dataframe, calculated_dfs_per_file[file_name]],
                                                                  axis='columns')
 
         for file_name, dataframe in dataframes_per_file_run_added.items():
