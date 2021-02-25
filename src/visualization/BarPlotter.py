@@ -5,36 +5,40 @@ from .Plotter import Plotter
 
 class BarPlotter(Plotter):
     """Class for generating bar plots"""
+
     def __init__(self, dataframe, result_path, file_name, title):
         super().__init__(dataframe, result_path, file_name, title)
 
     def generate(self):
-        columns = [col for col in self.dataframe.columns if 'max' in col]
+        # get max columns
+        columns = [column for column in self.dataframe.columns if 'max' in column]
+
         colors = px.colors.qualitative.Plotly
         traces = []
         color_map = {}
 
-        for idx, cl in enumerate(self.dataframe.index):
+        for idx, clazz in enumerate(self.dataframe.index):
             # fill color map
-            if cl not in color_map:
-                color_map[cl] = colors[idx % len(colors)]
-            # get data
-            y = self.dataframe.loc[cl, columns]
+            if clazz not in color_map:
+                color_map[clazz] = colors[idx % len(colors)]
 
-            # append new trace to figure
+            # get data
+            y = self.dataframe.loc[clazz, columns]
+
+            # append new trace
             traces.append(
                 go.Bar(
-                    name=cl,
+                    name=clazz,
                     x=columns,
                     y=y,
                     hovertemplate='%{y:.4f}',
-                    marker=dict(color=color_map[cl])
+                    marker=dict(color=color_map[clazz])
                 )
             )
 
-        # sort traces
+        # sort all traces by first column
         sort_by = columns[0]
-        sorted_traces = sorted(traces, key=lambda item: item.y[item.x.index(sort_by)], reverse=True)
+        sorted_traces = sorted(traces, key=lambda trace: trace.y[trace.x.index(sort_by)], reverse=True)
 
         # create figure
         fig = go.Figure(data=sorted_traces)
