@@ -69,16 +69,17 @@ def dataframes_to_csv(path, dataframes_per_file, output_file_names, nan_represen
     return True
 
 
-def generate_dataframe_of_file_per_model(models, files_per_model, session_metrics, drop_rows, config_path):
+def generate_dataframe_of_file_per_model(models, files_per_model, drop_rows, config_path):
     """Generates one dataframe for each file per model.
-    Return dict of the form {model_path: {filename:dataframe}}"""
+    Return dict of the form {model_path: {filename: dataframe}}"""
     group_column = get_data_from_config("class_column_name", path=config_path)
-    dataframes_of_models = {model: None for model in models}
-    for model, files_by_name in files_per_model.items():
-        dataframes = generate_dataframe_per_file_name(files_by_name, group_column, drop_rows)
-        calculated_dataframes = calculate(dataframes, group_by=group_column, metrics=session_metrics)
-        dataframes_of_models[model] = calculated_dataframes
-
+    dataframes_of_models = {model: dict() for model in models}
+    for model, path_per_file_name in files_per_model.items():
+        for file_name, file_path in path_per_file_name.items():
+            dataframe = pd.read_csv(file_path)
+            dataframe.drop(index=drop_rows, inplace=True, errors='ignore')
+            dataframe.set_index(group_column, inplace=True)
+            dataframes_of_models[model][file_name] = dataframe
     return dataframes_of_models
 
 
@@ -99,13 +100,13 @@ def generate_summary_dataframe_of_model(dataframes, config_path, session_metrics
         set_name = get_set_name(file_name, config_path)
         if set_name is not None:
             # create columns
-            for column in [col for col in dataframe.columns if
-                           any([check_name(col, "".join([".+_", metric])) for metric in
-                                session_metrics])]:
-                tokens = str(column).split("_")
+            columns = [col for col in dataframe.columns if any([check_name(col, "".join([".+_", metric])) for metric in
+                                                                session_metrics])]
+            for column in columns:
                 # add value into data
                 for clazz in dataframe.index.values:
-                    data["_".join([tokens[0], set_name, tokens[1], clazz])] = [dataframe.loc[clazz, column]]
+                    column_name = "_".join([set_name, column, clazz])
+                    data[column_name] = [dataframe.loc[clazz, column]]
 
     df = pd.DataFrame(data=data)
     return df

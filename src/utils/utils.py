@@ -8,14 +8,9 @@ def check_name(name, pattern):
 
 
 def get_set_name(file_name, config_path):
-    if check_name(file_name, get_pattern('train_set', config_path)):
-        set_name = 'train'
-    elif check_name(file_name, get_pattern('val_set', config_path)):
-        set_name = 'val'
-    elif check_name(file_name, get_pattern('test_set', config_path)):
-        set_name = 'test'
-    else:
-        set_name = None
+    regex = re.compile(get_pattern('set', config_path))
+    matches = regex.search(file_name)
+    set_name = matches.group(1) if matches else None
     return set_name
 
 

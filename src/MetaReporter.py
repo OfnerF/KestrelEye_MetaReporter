@@ -3,8 +3,8 @@ import os
 from .utils import nodes_to_list
 from .utils.utils_config import get_data_from_config, get_pattern, get_patterns_to_look_for, get_model_config_data
 from .utils.utils_files import find_files_per_pattern, remove_files_not_in_runs, get_sub_directories, \
-    get_files_per_model, get_model_config_files_per_model, get_number_of_runs, \
-    generate_file_path, get_paths_per_run_of_name
+    get_model_config_files_per_model, get_number_of_runs, \
+    generate_file_path, get_paths_per_run_of_name, get_meta_files_per_model
 from .utils.utils_pandas import dataframes_to_csv, calculate, generate_dataframe_of_file_per_model, \
     write_session_meta_result, generate_summary_dataframe_of_model, generate_dataframes_with_run, \
     get_dataframes_per_file_for_table_plot
@@ -53,7 +53,7 @@ class MetaReporter:
                                    self.session_metrics,
                                    self.drop_rows)
 
-    def generate_per_model(self, model_path=None):
+    def generate_per_model(self, model_path=None, generate_plots=True):
         """ generates the meta report for each model in the session with the same parameters"""
         if model_path is None:
             model_path = self.path
@@ -87,50 +87,51 @@ class MetaReporter:
         nan_repr = get_data_from_config('nan_representation', path=self.config_path)
         is_generated = dataframes_to_csv(result_path, calculated_dfs_per_file, meta_file_names, nan_repr)
 
-        # generate bar plots
-        bar_plot_per_file = dict()
-        for file_name in meta_file_names:
-            title = file_name.split('.')[0]
-            output_file_name = '_'.join(['bar', title])
+        if generate_plots:
+            # generate bar plots
+            bar_plot_per_file = dict()
+            for file_name in meta_file_names:
+                title = file_name.split('.')[0]
+                output_file_name = '_'.join(['bar', title])
 
-            plot = self.generate_bar_plot(calculated_dfs_per_file[file_name.replace("meta_", "")], output_file_name,
-                                          title)
-            bar_plot_per_file[file_name] = plot
+                plot = self.generate_bar_plot(calculated_dfs_per_file[file_name.replace("meta_", "")], output_file_name,
+                                              title)
+                bar_plot_per_file[file_name] = plot
 
-        # generate violin plots
-        for file_name, dataframe in dataframes_per_file.items():
-            title = file_name.split('.')[0]
-            output_file_name = '_'.join(['violin', title])
+            # generate violin plots
+            for file_name, dataframe in dataframes_per_file.items():
+                title = file_name.split('.')[0]
+                output_file_name = '_'.join(['violin', title])
 
-            # sort violin chart corresponding to bar plot
-            meta_file_name = '_'.join([meta_file_prefix, file_name])
-            sorted_classes = [trace.name for trace in bar_plot_per_file[meta_file_name].figure.data]
+                # sort violin chart corresponding to bar plot
+                meta_file_name = '_'.join([meta_file_prefix, file_name])
+                sorted_classes = [trace.name for trace in bar_plot_per_file[meta_file_name].figure.data]
 
-            self.generate_violin_plot(dataframe, output_file_name, title, sorted_classes, drop_columns=['Run'])
+                self.generate_violin_plot(dataframe, output_file_name, title, sorted_classes, drop_columns=['Run'])
 
-        # generate table plots
-        # calculated dataframes usable for meta columns
-        dataframes_per_file_for_tables = get_dataframes_per_file_for_table_plot(dataframes_per_file,
-                                                                                calculated_dfs_per_file)
-        for file_name, dataframe in dataframes_per_file_for_tables.items():
-            file_name = file_name.split('.')[0]
-            output_file_name = '_'.join(['table', file_name])
+            # generate table plots
+            # calculated dataframes usable for meta columns
+            dataframes_per_file_for_tables = get_dataframes_per_file_for_table_plot(dataframes_per_file,
+                                                                                    calculated_dfs_per_file)
+            for file_name, dataframe in dataframes_per_file_for_tables.items():
+                file_name = file_name.split('.')[0]
+                output_file_name = '_'.join(['table', file_name])
 
-            self.generate_table_plot(dataframe, output_file_name, title=file_name)
+                self.generate_table_plot(dataframe, output_file_name, title=file_name)
 
         return is_generated
 
     def generate_per_session(self):
         """ generates the meta report from all models in the session """
-
         model_paths = get_sub_directories(self.path)
+        for model in model_paths:
+            self.generate_per_model(model, generate_plots=False)
 
-        # files_per_model = {model_path: {file_name: file_paths}}
-        files_per_model = get_files_per_model(self.path, model_paths, self.config_path)
+        meta_files_per_model = get_meta_files_per_model(model_paths, self.config_path)
 
-        # dataframe_of_models = {model_path: {file_name: dataframe}}
-        dataframes_of_models = generate_dataframe_of_file_per_model(model_paths, files_per_model, self.session_metrics,
-                                                                    self.drop_rows, self.config_path)
+        dfs_of_meta_file_per_model = generate_dataframe_of_file_per_model(model_paths, meta_files_per_model,
+                                                                          self.drop_rows,
+                                                                          self.config_path)
 
         meta_file_prefix = get_data_from_config('file_prefix', path=self.config_path)
         result_file_name = '_'.join([meta_file_prefix, '.'.join([os.path.basename(self.path), 'csv'])])
@@ -149,14 +150,16 @@ class MetaReporter:
         config_files_per_model = get_model_config_files_per_model(model_paths, self.config_path)
 
         is_generated = True
-        for model_path, dataframes in dataframes_of_models.items():
+        for model_path, df_per_file_name in dfs_of_meta_file_per_model.items():
             number_of_runs = get_number_of_runs(model_path, run_pattern)
 
             data = {'model': os.path.basename(model_path), 'runs': number_of_runs}
             config_data = get_model_config_data(config_files_per_model[model_path], node_list, multiple_entries_in)
             data.update(config_data)
 
-            model_data = generate_summary_dataframe_of_model(dataframes, self.config_path, self.session_metrics, data)
+            model_data = generate_summary_dataframe_of_model(df_per_file_name, self.config_path, self.session_metrics,
+                                                             data)
+
             is_generated = is_generated and write_session_meta_result(model_data, result_file_path, nan_rep,
                                                                       duplicated_entry_identifiers)
 

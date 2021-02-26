@@ -8,7 +8,8 @@
     "val_set": "^val_.*\\.csv$",
     "test_set": "^test_.*\\.csv$",
     "model_directory": "^model$",
-    "model_config": "^config.*\\.json$"
+    "model_config": "^config.*\\.json$",
+    "set": "_(train|val|test)_"
   },
   "look_for": [
     "test_results",

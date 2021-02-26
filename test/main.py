@@ -51,5 +51,5 @@ session_path_3 = "D:\\Karriere\\KestrelEye\\MetaReporter\\reports\\image_rating"
 # meta_reporter_7 = MetaReporter(model_path_7, model_path_7, config_path=config_path, level=0)
 # print(meta_reporter_7)
 
-#meta_reporter_session_3 = MetaReporter(session_path_3, session_path_3, config_path=config_path, level=1)
-#print(meta_reporter_session_3)
+# meta_reporter_session_3 = MetaReporter(session_path_3, session_path_3, config_path=config_path, level=1)
+# print(meta_reporter_session_3)

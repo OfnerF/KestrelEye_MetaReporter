@@ -109,3 +109,17 @@ def get_paths_per_run_of_name(files, run_pattern, root_dir):
         paths_per_run_of_file[file_name][run] = file
 
     return paths_per_run_of_file
+
+
+def get_meta_files_per_model(models, config_path):
+    """Returns a dict in the form of {model_path: {filename: file_path}}"""
+    # get pattern
+    file_pattern = get_pattern('meta', config_path)
+    files_per_model = {model: dict() for model in models}
+    # get files
+    for model in models:
+        files = find_files_per_pattern(model, [file_pattern])
+        for file in files:
+            file_name = get_file_name(file)
+            files_per_model[model][file_name] = file
+    return files_per_model
