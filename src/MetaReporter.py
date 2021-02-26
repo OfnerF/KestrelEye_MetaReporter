@@ -166,7 +166,10 @@ class MetaReporter:
         return is_generated
 
     def generate_bar_plot(self, dataframe, output_file_name, title):
-        plot = BarPlotter(dataframe=dataframe, result_path=self.result_path, file_name=output_file_name, title=title)
+        column_identifiers = get_data_from_config('bar_plot_columns', path=self.config_path)
+
+        plot = BarPlotter(dataframe=dataframe, result_path=self.result_path, file_name=output_file_name, title=title,
+                          column_identifiers=column_identifiers)
         plot.save_as(self.plot_format)
         return plot
 

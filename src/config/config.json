@@ -85,5 +85,8 @@
   "duplicates_identifier": [
     "model"
   ],
-  "plot_format": "pdf"
+  "plot_format": "pdf",
+  "bar_plot_columns": [
+    "max"
+  ]
 }

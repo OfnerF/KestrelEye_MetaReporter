@@ -7,12 +7,13 @@ from ..utils.utils_visualization import get_color_map
 class BarPlotter(Plotter):
     """Class for generating bar plots"""
 
-    def __init__(self, dataframe, result_path, file_name, title):
+    def __init__(self, dataframe, result_path, file_name, title, column_identifiers):
+        self.column_identifiers = column_identifiers
         super().__init__(dataframe, result_path, file_name, title)
 
     def generate(self):
-        # get max columns
-        columns = [column for column in self.dataframe.columns if 'max' in column]
+        # get columns
+        columns = [col for col in self.dataframe.columns if any([sub in col for sub in self.column_identifiers])]
 
         colors = px.colors.qualitative.Plotly
         traces = []
