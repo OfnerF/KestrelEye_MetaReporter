@@ -7,8 +7,8 @@ def check_name(name, pattern):
     return regex.match(name) is not None
 
 
-def get_set_name(file_name, config_path):
-    regex = re.compile(get_pattern('set', config_path))
+def get_set_name(file_name, config_path, pattern="meta_set"):
+    regex = re.compile(get_pattern(pattern, config_path))
     matches = regex.search(file_name)
     set_name = matches.group(1) if matches else None
     return set_name

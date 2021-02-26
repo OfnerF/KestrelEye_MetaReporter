@@ -6,7 +6,7 @@ import os
 from functools import reduce
 
 
-def generate_dataframe_per_file_name(paths_per_file, index_name, drop_rows):
+def generate_dataframe_per_key(paths_per_file, index_name, drop_rows):
     """Generates dataframes per file name by concatenating the dataframes of each file."""
     file_dataframes = {file_name: None for file_name in paths_per_file.keys()}
     for file in paths_per_file.keys():

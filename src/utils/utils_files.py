@@ -25,11 +25,11 @@ def get_run_of_file(path, pattern, stop_path):
 
 
 def extract_file_names(files):
-    file_names = [get_file_name(file) for file in files]
+    file_names = [get_base_name(file) for file in files]
     return sorted(list(set(file_names)))
 
 
-def get_file_name(file):
+def get_base_name(file):
     return os.path.basename(file)
 
 
@@ -39,7 +39,7 @@ def get_files_per_name(files):
     # generate hashmap with file name as key and files as value
     paths_of_file = {file_name: [] for file_name in file_names}
     for file in files:
-        file_name = get_file_name(file)
+        file_name = get_base_name(file)
         paths_of_file[file_name].append(file)
     return paths_of_file
 
@@ -105,7 +105,7 @@ def get_paths_per_run_of_name(files, run_pattern, root_dir):
     paths_per_run_of_file = {file_name: dict() for file_name in file_names}
     for file in files:
         run = get_run_of_file(file, run_pattern, root_dir)
-        file_name = get_file_name(file)
+        file_name = get_base_name(file)
         paths_per_run_of_file[file_name][run] = file
 
     return paths_per_run_of_file
@@ -120,6 +120,6 @@ def get_meta_files_per_model(models, config_path):
     for model in models:
         files = find_files_per_pattern(model, [file_pattern])
         for file in files:
-            file_name = get_file_name(file)
+            file_name = get_base_name(file)
             files_per_model[model][file_name] = file
     return files_per_model

@@ -9,7 +9,8 @@
     "test_set": "^test_.*\\.csv$",
     "model_directory": "^model$",
     "model_config": "^config.*\\.json$",
-    "set": "_(train|val|test)_"
+    "set": "^(train|val|test)_",
+    "meta_set": "_(train|val|test)_"
   },
   "look_for": [
     "test_results",
@@ -88,5 +89,7 @@
   "plot_format": "pdf",
   "bar_plot_columns": [
     "max"
-  ]
+  ],
+  "collection_file_name": "collected_data.csv",
+  "collected_data_index_name": "path"
 }

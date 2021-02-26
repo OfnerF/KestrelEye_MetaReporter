@@ -1,16 +1,18 @@
 import os
 
-from .utils import nodes_to_list
+import pandas as pd
+
+from .utils import nodes_to_list, check_name, get_set_name
 from .utils.utils_config import get_data_from_config, get_pattern, get_patterns_to_look_for, get_model_config_data
 from .utils.utils_files import find_files_per_pattern, remove_files_not_in_runs, get_sub_directories, \
     get_model_config_files_per_model, get_number_of_runs, \
-    generate_file_path, get_paths_per_run_of_name, get_meta_files_per_model
+    generate_file_path, get_paths_per_run_of_name, get_meta_files_per_model, get_base_name
 from .utils.utils_pandas import dataframes_to_csv, calculate, generate_dataframe_of_file_per_model, \
     write_session_meta_result, generate_summary_dataframe_of_model, generate_dataframes_with_run, \
     get_dataframes_per_file_for_table_plot
 from .visualization.BarPlotter import BarPlotter
-from .visualization.ViolinPlotter import ViolinPlotter
 from .visualization.TablePlotter import TablePlotter
+from .visualization.ViolinPlotter import ViolinPlotter
 
 
 class MetaReporter:
@@ -123,6 +125,8 @@ class MetaReporter:
 
     def generate_per_session(self):
         """ generates the meta report from all models in the session """
+        self.generate_collection_of_session()
+
         model_paths = get_sub_directories(self.path)
         for model in model_paths:
             self.generate_per_model(model, generate_plots=False)
@@ -194,3 +198,50 @@ class MetaReporter:
                             file_name=output_file_name, title=title)
         plot.save_as(self.plot_format)
         return plot
+
+    def generate_collection_of_session(self):
+        """Generates a file containing each value of the run per model"""
+
+        # get dict of the form {model_path: {run: [files]}}
+        model_paths = get_sub_directories(self.path)
+        run_pattern = get_pattern('run_directory', path=self.config_path)
+        files_of_run_per_model = {model: dict() for model in model_paths}
+        file_patterns = get_patterns_to_look_for(self.config_path)
+        for model in model_paths:
+            sub_directories = get_sub_directories(model)
+            for sub_directory in sub_directories:
+                sub_directory_name = get_base_name(sub_directory)
+                if check_name(sub_directory_name, run_pattern):
+                    files = find_files_per_pattern(sub_directory, file_patterns)
+                    files_of_run_per_model[model][sub_directory_name] = files
+
+        data = dict()
+
+        for model_path, files_per_run in files_of_run_per_model.items():
+            model_name = get_base_name(model_path)
+
+            # fill data dict from dataframes
+            for run, files in files_per_run.items():
+                path_name = '_'.join([model_name, run])
+                data[path_name] = dict()
+                for file in files:
+                    dataframe = pd.read_csv(file)
+                    dataframe.set_index(list(dataframe.columns)[0], inplace=True)
+
+                    set_name = get_set_name(get_base_name(file), self.config_path, pattern='set')
+                    if set_name is None:
+                        continue
+
+                    for column in dataframe.columns:
+                        for clazz in dataframe.index:
+                            column_name = '_'.join([set_name, column, clazz])
+                            data[path_name].update({column_name: dataframe.loc[clazz, column]})
+
+        df = pd.DataFrame(data)
+        df = df.T
+
+        df.index.set_names(get_data_from_config("collected_data_index_name", path=self.config_path), inplace=True)
+
+        path = generate_file_path(self.result_path, get_data_from_config("collection_file_name", path=self.config_path))
+        df.to_csv(path)
+        return True
